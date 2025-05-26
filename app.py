@@ -3,6 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+import logging
+
+# تكوين التسجيل
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -13,12 +18,15 @@ database_url = os.environ.get('DATABASE_URL', 'sqlite:///banks.db')
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
+logger.info(f"Using database URL: {database_url}")
+
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_size': 10,
+    'pool_size': 5,
     'pool_recycle': 3600,
-    'pool_pre_ping': True
+    'pool_pre_ping': True,
+    'pool_timeout': 30
 }
 db = SQLAlchemy(app)
 
@@ -41,10 +49,11 @@ class Visit(db.Model):
 def init_db():
     with app.app_context():
         try:
+            logger.info("Creating database tables...")
             db.create_all()
             # التحقق من وجود بيانات أولية
             if Bank.query.count() == 0:
-                print("إضافة بيانات أولية...")
+                logger.info("Adding initial data...")
                 initial_banks = [
                     Bank(
                         name="مصرف الوحدة",
@@ -67,10 +76,11 @@ def init_db():
                 ]
                 db.session.add_all(initial_banks)
                 db.session.commit()
-                print("تم إضافة البيانات الأولية")
+                logger.info("Initial data added successfully")
         except Exception as e:
-            print(f"خطأ في تهيئة قاعدة البيانات: {str(e)}")
+            logger.error(f"Error initializing database: {str(e)}")
             db.session.rollback()
+            raise
 
 # تهيئة قاعدة البيانات عند تشغيل التطبيق
 init_db()
@@ -96,6 +106,7 @@ def get_banks():
             'completed': bank.completed
         } for bank in banks])
     except Exception as e:
+        logger.error(f"Error getting banks: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/banks', methods=['POST'])
@@ -119,6 +130,7 @@ def add_bank():
             'completed': new_bank.completed
         })
     except Exception as e:
+        logger.error(f"Error adding bank: {str(e)}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
@@ -133,6 +145,7 @@ def complete_bank(bank_id):
             'completed': bank.completed
         })
     except Exception as e:
+        logger.error(f"Error completing bank: {str(e)}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
@@ -154,8 +167,19 @@ def add_visit(bank_id):
             'notes': new_visit.notes
         })
     except Exception as e:
+        logger.error(f"Error adding visit: {str(e)}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/health')
+def health_check():
+    try:
+        # التحقق من الاتصال بقاعدة البيانات
+        db.session.execute('SELECT 1')
+        return jsonify({'status': 'healthy', 'database': 'connected'})
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

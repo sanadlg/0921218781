@@ -520,6 +520,8 @@ function extractCoordinatesFromUrl(url) {
     try {
         // تحليل الرابط للحصول على الإحداثيات
         const urlObj = new URL(url);
+        
+        // الحالة 1: رابط يحتوي على query parameter
         const query = urlObj.searchParams.get('query');
         if (query) {
             const [lat, lng] = query.split(',').map(Number);
@@ -527,6 +529,37 @@ function extractCoordinatesFromUrl(url) {
                 return { lat, lng };
             }
         }
+        
+        // الحالة 2: رابط يحتوي على @ في المسار
+        const path = urlObj.pathname;
+        const atIndex = path.indexOf('@');
+        if (atIndex !== -1) {
+            const coordsStr = path.substring(atIndex + 1);
+            const [lat, lng] = coordsStr.split(',').map(Number);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                return { lat, lng };
+            }
+        }
+        
+        // الحالة 3: رابط يحتوي على ll parameter
+        const ll = urlObj.searchParams.get('ll');
+        if (ll) {
+            const [lat, lng] = ll.split(',').map(Number);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                return { lat, lng };
+            }
+        }
+        
+        // الحالة 4: رابط يحتوي على q parameter
+        const q = urlObj.searchParams.get('q');
+        if (q) {
+            const [lat, lng] = q.split(',').map(Number);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                return { lat, lng };
+            }
+        }
+        
+        console.error('لم يتم العثور على إحداثيات في الرابط');
         return null;
     } catch (error) {
         console.error('خطأ في تحليل الرابط:', error);
