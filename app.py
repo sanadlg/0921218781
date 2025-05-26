@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import logging
+import time
 
 # تكوين التسجيل
 logging.basicConfig(level=logging.INFO)
@@ -26,11 +27,13 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_size': 5,
     'pool_recycle': 3600,
     'pool_pre_ping': True,
-    'pool_timeout': 30
+    'pool_timeout': 30,
+    'max_overflow': 10
 }
 db = SQLAlchemy(app)
 
 class Bank(db.Model):
+    __tablename__ = 'bank'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(200))
@@ -40,43 +43,71 @@ class Bank(db.Model):
     visits = db.relationship('Visit', backref='bank', lazy=True)
 
 class Visit(db.Model):
+    __tablename__ = 'visit'
     id = db.Column(db.Integer, primary_key=True)
     bank_id = db.Column(db.Integer, db.ForeignKey('bank.id'), nullable=False)
     visit_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     notes = db.Column(db.Text)
 
+def wait_for_db(max_retries=5, retry_interval=2):
+    """انتظار حتى تكون قاعدة البيانات جاهزة"""
+    for i in range(max_retries):
+        try:
+            db.session.execute('SELECT 1')
+            logger.info("Database connection successful")
+            return True
+        except Exception as e:
+            logger.warning(f"Database connection attempt {i+1} failed: {str(e)}")
+            if i < max_retries - 1:
+                time.sleep(retry_interval)
+    return False
+
 # التحقق من وجود قاعدة البيانات وإنشائها مع بيانات أولية
 def init_db():
     with app.app_context():
         try:
+            if not wait_for_db():
+                logger.error("Could not connect to database after multiple attempts")
+                return
+
             logger.info("Creating database tables...")
             db.create_all()
+            
             # التحقق من وجود بيانات أولية
-            if Bank.query.count() == 0:
-                logger.info("Adding initial data...")
-                initial_banks = [
-                    Bank(
-                        name="مصرف الوحدة",
-                        address="شارع عمر المختار، طرابلس",
-                        lat=32.8872,
-                        lng=13.1913
-                    ),
-                    Bank(
-                        name="مصرف الجمهورية",
-                        address="شارع 24 ديسمبر، طرابلس",
-                        lat=32.8972,
-                        lng=13.1813
-                    ),
-                    Bank(
-                        name="مصرف الصحارى",
-                        address="شارع بن عاشور، طرابلس",
-                        lat=32.8772,
-                        lng=13.2013
-                    )
-                ]
-                db.session.add_all(initial_banks)
-                db.session.commit()
-                logger.info("Initial data added successfully")
+            try:
+                bank_count = Bank.query.count()
+                logger.info(f"Current bank count: {bank_count}")
+                
+                if bank_count == 0:
+                    logger.info("Adding initial data...")
+                    initial_banks = [
+                        Bank(
+                            name="مصرف الوحدة",
+                            address="شارع عمر المختار، طرابلس",
+                            lat=32.8872,
+                            lng=13.1913
+                        ),
+                        Bank(
+                            name="مصرف الجمهورية",
+                            address="شارع 24 ديسمبر، طرابلس",
+                            lat=32.8972,
+                            lng=13.1813
+                        ),
+                        Bank(
+                            name="مصرف الصحارى",
+                            address="شارع بن عاشور، طرابلس",
+                            lat=32.8772,
+                            lng=13.2013
+                        )
+                    ]
+                    db.session.add_all(initial_banks)
+                    db.session.commit()
+                    logger.info("Initial data added successfully")
+            except Exception as e:
+                logger.error(f"Error checking/adding initial data: {str(e)}")
+                db.session.rollback()
+                raise
+                
         except Exception as e:
             logger.error(f"Error initializing database: {str(e)}")
             db.session.rollback()
