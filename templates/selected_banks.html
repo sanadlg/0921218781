@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المصارف المختارة - مندوب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>المصارف المختارة</h1>
+        <p>قائمة المصارف التي تم اختيارها للزيارة</p>
+    </header>
+
+    <div class="container">
+        <a href="/" class="back-btn">العودة للصفحة الرئيسية</a>
+        
+        <div class="banks-list">
+            <h2>المصارف المختارة</h2>
+            <div id="selectedBanksList">
+                <!-- سيتم إضافة المصارف المختارة ديناميكياً عبر JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>تم برمجة التطبيق من قبل سند بن لاغة</p>
+        <p>لصالح وزارة الزراعة والحجر البيئي</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/selected_banks.js') }}"></script>
+</body>
+</html> 

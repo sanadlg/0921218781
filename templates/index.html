@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مندوب - وزارة الزراعة والحجر البيئي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaL5L1pgxl8fKLcM8kmcASl30D1bcHAGk&libraries=places&callback=initMap" async defer></script>
+</head>
+<body>
+    <header>
+        <h1>مندوب</h1>
+        <p>تطبيق إدارة زيارات المصارف</p>
+    </header>
+
+    <div class="container">
+        <div class="main-buttons">
+            <button id="addBankButton" class="main-btn">
+                <i class="fas fa-plus"></i>
+                إضافة مصرف جديد
+            </button>
+            <button id="selectedBanksButton" class="main-btn">
+                <i class="fas fa-list"></i>
+                المصارف المختارة
+            </button>
+        </div>
+
+        <div id="addBankForm" class="add-bank-form" style="display: none;">
+            <h2>إضافة مصرف جديد</h2>
+            <form id="bankForm">
+                <div class="form-group">
+                    <label for="bankName">اسم المصرف:</label>
+                    <input type="text" id="bankName" required>
+                </div>
+                <div class="form-group">
+                    <label for="bankAddress">العنوان:</label>
+                    <input type="text" id="bankAddress" required>
+                </div>
+                <div class="form-group">
+                    <label for="bankLocation">رابط الموقع من خرائط جوجل:</label>
+                    <input type="text" id="bankLocation" placeholder="انسخ رابط الموقع من تطبيق خرائط جوجل" required>
+                    <small>مثال: https://maps.app.goo.gl/...</small>
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="submit-btn">حفظ</button>
+                    <button type="button" class="cancel-btn" onclick="hideAddBankForm()">إلغاء</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="search-container">
+            <form class="search-form" id="searchForm">
+                <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن مصرف في طرابلس...">
+                <button type="submit" class="search-btn">بحث</button>
+            </form>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <div id="map" class="map-container"></div>
+
+        <div class="banks-list">
+            <h2>قائمة المصارف في طرابلس</h2>
+            <!-- سيتم إضافة المصارف ديناميكياً عبر JavaScript -->
+        </div>
+    </div>
+
+    <footer>
+        <p>تم برمجة التطبيق من قبل سند بن لاغة</p>
+        <p>لصالح وزارة الزراعة والحجر البيئي</p>
+    </footer>
+
+    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 
